@@ -422,8 +422,14 @@ static void _UartCmdParser_Parse_cmd(void)
 
 }
 
-// TODO: Step #5 , add UartCmdParser_Rx_Receive to UART IRQ handler
-void UartCmdParser_Rx_Receive(uint8_t tmp)
+void SystemClkDelay(uint16_t Delay)
+{
+	while(Delay--);
+}
+
+
+// TODO: Step #5 , add UartCmd_Rx_Receive to UART IRQ handler
+void UartCmd_Rx_Receive(uint8_t tmp)
 {
 	aui1_cmd_buf[u8UartRxCnt++] = tmp;
 
@@ -461,17 +467,11 @@ void UartCmdParser_Rx_Receive(uint8_t tmp)
 	//make sure clear RX flag	
 }
 
-
-void SystemClkDelay(uint16_t Delay)
-{
-	while(Delay--);
-}
-
 void UartCmd_Send(uint8_t *pui1_data ,uint8_t z_len )
 {
    	uint8_t i;
 
-	DISABLE_UART0_INTERRUPT;
+	DISABLE_UART0_INTERRUPT;	//ES = 0
 
 	for (i=0 ;i<z_len;i++)
 	{
@@ -479,7 +479,7 @@ void UartCmd_Send(uint8_t *pui1_data ,uint8_t z_len )
 		UART_Send_Data(UART0 , (uint8_t)*(pui1_data+i));
 	}
 
-	ENABLE_UART0_INTERRUPT;
+	ENABLE_UART0_INTERRUPT;	//ES = 1
 }
 
 // TODO: Step #6 , add UART0_Process to while loop

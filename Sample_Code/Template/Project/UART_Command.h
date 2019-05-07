@@ -21,10 +21,7 @@ typedef enum
 extern uint8_t u8UartRxCnt;
 extern uint8_t u8SetProcessPkt;
 
-void UartCmdParser_Rx_Receive(uint8_t tmp);
-void UART0_Process(void);
+void UartCmd_Rx_Receive(uint8_t tmp);
 void UartCmd_Send(uint8_t *pui1_data ,uint8_t z_len );
-
-
-
+void UART0_Process(void);
 

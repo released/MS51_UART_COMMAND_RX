@@ -102,7 +102,7 @@ void UART0_ISR(void) interrupt 4         // Vector @  0x23
     if (RI)
     {   
 //		DISABLE_UART0_INTERRUPT;		//clr_IE_ES;
-		UartCmdParser_Rx_Receive(SBUF);
+		UartCmd_Rx_Receive(SBUF);
 	  
 		clr_SCON_RI;                                         // Clear RI (Receive Interrupt).
 //		ENABLE_UART0_INTERRUPT;		//set_IE_ES;
