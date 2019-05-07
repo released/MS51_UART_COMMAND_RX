@@ -1,0 +1,11 @@
+".\Output\main.obj",
+".\Output\PUTCHAR.obj",
+".\Output\UART_Command.obj",
+".\Output\sys.obj",
+".\Output\Common.obj",
+".\Output\delay.obj",
+".\Output\uart.obj",
+".\Output\STARTUP.obj" 
+TO ".\Output\Project" 
+PRINT(".\LST\Project.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 

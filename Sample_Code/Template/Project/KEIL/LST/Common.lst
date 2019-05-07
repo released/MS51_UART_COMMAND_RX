@@ -1,0 +1,177 @@
+C51 COMPILER V9.55   COMMON                                                                05/07/2019 19:56:58 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE COMMON
+OBJECT MODULE PLACED IN .\Output\Common.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\..\..\Library\StdDriver\src\Common.c LARGE OPTIMIZE(7,SPEED) BROWS
+                    -E INCDIR(..\..\..\..\Library\Device\Include;..\..\..\..\Library\StdDriver\inc) DEBUG OBJECTEXTEND PRINT(.\LST\Common.lst
+                    -) TABS(2) OBJECT(.\Output\Common.obj)
+
+line level    source
+
+   1          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   2          /*                                                                                                        
+             - */
+   3          /* Copyright(c) 2019 Nuvoton Technology Corp. All rights reserved.                                        
+             - */
+   4          /*                                                                                                        
+             - */
+   5          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   6          
+   7          //********************************************************************************************************
+             -***
+   8          //  Website: http://www.nuvoton.com
+   9          //  E-Mail : MicroC-8bit@nuvoton.com
+  10          //  Date   : Jan/21/2019
+  11          //********************************************************************************************************
+             -***
+  12          
+  13          #include "MS51.h"
+  14          
+  15          
+  16          //----------------------------------------------------------------------------------
+  17          // UART0 baud rate initial setting 
+  18          //----------------------------------------------------------------------------------
+  19          void InitialUART0_Timer1(UINT32 u32Baudrate)    //T1M = 1, SMOD = 1
+  20          {
+  21   1          P06_QUASI_MODE;   //Setting UART pin as Quasi mode for transmit
+  22   1          P07_QUASI_MODE;   //Setting UART pin as Quasi mode for transmit
+  23   1        
+  24   1          SCON = 0x50;      //UART0 Mode1,REN=1,TI=1
+  25   1          TMOD |= 0x20;     //Timer1 Mode1
+  26   1          
+  27   1          set_PCON_SMOD;          //UART0 Double Rate Enable
+  28   1          set_CKCON_T1M;
+  29   1          clr_T3CON_BRCK;         //Serial port 0 baud rate clock source = Timer1
+  30   1       
+  31   1      #ifdef FOSC_160000
+                  TH1 = 256 - (1000000/u32Baudrate-1);               /*16 MHz */
+              #endif      
+  34   1      #ifdef FOSC_166000
+                  TH1 = 256 - (1037500/u32Baudrate);                 /*16.6 MHz */
+              #endif
+  37   1          set_TCON_TR1;
+  38   1      
+  39   1      }
+*** WARNING C280 IN LINE 19 OF ..\..\..\..\Library\StdDriver\src\Common.c: 'u32Baudrate': unreferenced local variable
+  40          //---------------------------------------------------------------
+  41          void InitialUART0_Timer3(UINT32 u32Baudrate) //use timer3 as Baudrate generator
+  42          {
+  43   1          P06_QUASI_MODE;   //Setting UART pin as Quasi mode for transmit
+  44   1          P07_QUASI_MODE;   //Setting UART pin as Quasi mode for transmit 
+  45   1        
+C51 COMPILER V9.55   COMMON                                                                05/07/2019 19:56:58 PAGE 2   
+
+  46   1          SCON = 0x50;     //UART0 Mode1,REN=1,TI=1
+  47   1          set_PCON_SMOD;        //UART0 Double Rate Enable
+  48   1          T3CON &= 0xF8;   //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1)
+  49   1          clr_T3CON_BRCK;        //UART0 baud rate clock source = Timer3
+  50   1      
+  51   1      #ifdef FOSC_160000
+                  RH3    = HIBYTE(65536 - (1000000/u32Baudrate))-1;     /*16 MHz */
+                  RL3    = LOBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz */
+              #endif
+  55   1      #ifdef FOSC_166000
+                  RH3    = HIBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+                  RL3    = LOBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+              #endif
+  59   1          set_T3CON_TR3;         //Trigger Timer3
+  60   1      }
+*** WARNING C280 IN LINE 41 OF ..\..\..\..\Library\StdDriver\src\Common.c: 'u32Baudrate': unreferenced local variable
+  61          
+  62          UINT8 Receive_Data_From_UART0(void)
+  63          {
+  64   1          UINT8 c;
+  65   1          while (!RI);
+  66   1          c = SBUF;
+  67   1          RI = 0;
+  68   1          return (c);
+  69   1      }
+  70          
+  71          void Send_Data_To_UART0 (UINT8 c)
+  72          {
+  73   1          TI = 0;
+  74   1          SBUF = c;
+  75   1          while(TI==0);
+  76   1      }
+  77          
+  78          
+  79          //----------------------------------------------------------------------------------
+  80          // UART1 baud rate initial setting 
+  81          //----------------------------------------------------------------------------------
+  82          void InitialUART1_Timer3(UINT32 u32Baudrate) //use timer3 as Baudrate generator
+  83          {
+  84   1          P02_INPUT_MODE;   //Setting RXD_1 pin as Input mode for transmit
+  85   1          P16_QUASI_MODE;   //Setting UART pin as Quasi mode for transmit
+  86   1        
+  87   1      //    SCON_1 = 0x50;    //UART1 Mode1,REN_1=1,TI_1=1
+  88   1      //    T3CON = 0x08;     //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1), UART1 in MODE 1
+  89   1      
+  90   1          SCON_1 = 0x52;    //UART1 Mode1,REN_1=1,TI_1=1
+  91   1          T3CON = 0xF8;     //T3PS2=0,T3PS1=0,T3PS0=0(Prescale=1), UART1 in MODE 1
+  92   1      
+  93   1      #ifdef FOSC_160000
+                  RH3    = HIBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz offset*/
+                  RL3    = LOBYTE(65536 - (1000000/u32Baudrate)-1);     /*16 MHz offset*/
+              #endif
+  97   1      #ifdef FOSC_166000
+                  RH3    = HIBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+                  RL3    = LOBYTE(65536 - (1037500/u32Baudrate));       /*16.6 MHz */
+              #endif
+ 101   1          set_T3CON_TR3;            //Trigger Timer3
+ 102   1      
+ 103   1      }
+*** WARNING C280 IN LINE 82 OF ..\..\..\..\Library\StdDriver\src\Common.c: 'u32Baudrate': unreferenced local variable
+ 104          
+ 105          UINT8 Receive_Data_From_UART1(void)
+C51 COMPILER V9.55   COMMON                                                                05/07/2019 19:56:58 PAGE 3   
+
+ 106          {
+ 107   1          UINT8 c;
+ 108   1          
+ 109   1          while (!RI_1);
+ 110   1          c = SBUF_1;
+ 111   1          RI_1 = 0;
+ 112   1          return (c);
+ 113   1      }
+ 114          
+ 115          void Send_Data_To_UART1 (UINT8 c)
+ 116          {
+ 117   1          TI_1 = 0;
+ 118   1          SBUF_1 = c;
+ 119   1          while(TI_1==0);
+ 120   1      }
+ 121          
+ 122          /*==========================================================================*/
+ 123          
+ 124          /****************************************************************************/
+ 125          /* Before call software reset function, please first confirm PCON define 
+ 126          /* Boot from APROM or LDROM
+ 127          /****************************************************************************/
+ 128          #ifdef SW_Reset
+              void SW_Reset(void)
+              {
+                  TA = 0xAA;
+                  TA = 0x55;
+                  set_PCON_SWRST;
+              }
+              #endif
+ 136          /*==========================================================================*/
+ 137          
+ 138          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    130    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  3 WARNING(S),  0 ERROR(S)

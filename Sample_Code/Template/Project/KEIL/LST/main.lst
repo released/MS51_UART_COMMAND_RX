@@ -1,0 +1,201 @@
+C51 COMPILER V9.55   MAIN                                                                  05/07/2019 19:56:57 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Output\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(..\..\..\..\Library\Devi
+                    -ce\Include;..\..\..\..\Library\StdDriver\inc) DEBUG OBJECTEXTEND PRINT(.\LST\main.lst) TABS(2) OBJECT(.\Output\main.obj)
+
+line level    source
+
+   1          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   2          /*                                                                                                        
+             - */
+   3          /* Copyright(c) 2019 Nuvoton Technology Corp. All rights reserved.                                        
+             - */
+   4          /*                                                                                                        
+             - */
+   5          /*--------------------------------------------------------------------------------------------------------
+             --*/
+   6          
+   7          /*********************************************************************************************************
+             -**/
+   8          /* Website: http://www.nuvoton.com                                                                        
+             - */
+   9          /*  E-Mail : MicroC-8bit@nuvoton.com                                                                      
+             - */
+  10          /*  Date   : Jan/21/2019                                                                                  
+             - */
+  11          /*********************************************************************************************************
+             -**/
+  12          
+  13          /*********************************************************************************************************
+             -***/
+  14          /*  File Function: MS51 DEMO project                                                                      
+             -  */
+  15          /*********************************************************************************************************
+             -***/
+  16          
+  17          //#include "MS51.h"
+  18          #include <stdio.h>
+  19          
+  20          #include "UART_Command.h"
+  21          
+  22          #define SYS_CLOCK                 (24000000ul)
+  23          
+  24          #define UART_INTERRUPT
+  25          
+  26          //Timer variable 
+  27          #define TIMER_LOG_MS              (1000)
+  28          #define GPIO_TOGGLE_MS              (500)
+  29          
+  30          uint8_t   u8TH0_Tmp = 0;
+  31          uint8_t   u8TL0_Tmp = 0;
+  32          
+  33          void GPIO_Toggle(void)
+  34          {
+  35   1          static uint8_t flag = 1;
+  36   1      
+  37   1        if (flag)
+  38   1        {
+  39   2          P12 = 1;
+  40   2          flag = 0;
+  41   2        }
+C51 COMPILER V9.55   MAIN                                                                  05/07/2019 19:56:57 PAGE 2   
+
+  42   1        else
+  43   1        {
+  44   2          P12 = 0;
+  45   2          flag = 1;
+  46   2        }
+  47   1      }
+  48          
+  49          void GPIO_Init(void)
+  50          {
+  51   1          P12_PUSHPULL_MODE;
+  52   1      }
+  53          
+  54          void Timer0_IRQHandler(void)
+  55          {
+  56   1      //  static uint16_t LOG_TIMER = 0;
+  57   1        static uint16_t CNT_TIMER = 0;
+  58   1        static uint16_t CNT_GPIO = 0;
+  59   1      
+  60   1        if (CNT_GPIO++ >= GPIO_TOGGLE_MS)
+  61   1        {   
+  62   2          CNT_GPIO = 0;
+  63   2          GPIO_Toggle();
+  64   2        } 
+  65   1      
+  66   1        if (CNT_TIMER++ >= TIMER_LOG_MS)
+  67   1        {   
+  68   2          CNT_TIMER = 0;
+  69   2      //      printf("LOG:%d\r\n",LOG_TIMER++);
+  70   2        }
+  71   1      }
+  72          
+  73          void Timer0_ISR(void) interrupt 1        // Vector @  0x0B
+  74          {
+  75   1          TH0 = u8TH0_Tmp;
+  76   1          TL0 = u8TL0_Tmp;
+  77   1          clr_TCON_TF0;
+  78   1        
+  79   1        Timer0_IRQHandler();
+  80   1      }
+  81          
+  82          void BasicTimer_TIMER0_Init(void)
+  83          {
+  84   1        uint16_t res = 0;
+  85   1      
+  86   1        ENABLE_TIMER0_MODE1;
+  87   1        
+  88   1        u8TH0_Tmp = HIBYTE(TIMER_DIV12_VALUE_1ms_FOSC_240000);
+  89   1        u8TL0_Tmp = LOBYTE(TIMER_DIV12_VALUE_1ms_FOSC_240000); 
+  90   1      
+  91   1          TH0 = u8TH0_Tmp;
+  92   1          TL0 = u8TL0_Tmp;
+  93   1      
+  94   1          ENABLE_TIMER0_INTERRUPT;                       //enable Timer0 interrupt
+  95   1          ENABLE_GLOBAL_INTERRUPT;                       //enable interrupts
+  96   1        
+  97   1          set_TCON_TR0;                                  //Timer0 run
+  98   1      }
+  99          
+ 100          void UART0_ISR(void) interrupt 4         // Vector @  0x23
+ 101          {
+ 102   1          if (RI)
+ 103   1          {   
+C51 COMPILER V9.55   MAIN                                                                  05/07/2019 19:56:57 PAGE 3   
+
+ 104   2      //    DISABLE_UART0_INTERRUPT;    //clr_IE_ES;
+ 105   2          UartCmdParser_Rx_Receive(SBUF);
+ 106   2          
+ 107   2          clr_SCON_RI;                                         // Clear RI (Receive Interrupt).
+ 108   2      //    ENABLE_UART0_INTERRUPT;   //set_IE_ES;
+ 109   2          }
+ 110   1          if (TI)
+ 111   1          {       
+ 112   2              clr_SCON_TI;                                       // Clear TI (Transmit Interrupt).
+ 113   2          }
+ 114   1      }
+ 115          
+ 116          void UART0_Init(void)
+ 117          {
+ 118   1          UART_Open(SYS_CLOCK,UART0_Timer3,115200);
+ 119   1          ENABLE_UART0_PRINTF; 
+ 120   1      
+ 121   1        #if defined (UART_INTERRUPT)
+ 122   1          ENABLE_UART0_INTERRUPT;                             /* Enable UART0 interrupt */
+ 123   1          ENABLE_GLOBAL_INTERRUPT;                            /* Global interrupt enable */ 
+ 124   1        #endif
+ 125   1      
+ 126   1        u8UartRxCnt=0;
+ 127   1        u8SetProcessPkt=0;
+ 128   1        
+ 129   1      }
+ 130          
+ 131          void SYS_Init(void)
+ 132          {
+ 133   1          MODIFY_HIRC_24();
+ 134   1      
+ 135   1          ALL_GPIO_QUASI_MODE;
+ 136   1          ENABLE_GLOBAL_INTERRUPT;                // global enable bit  
+ 137   1      }
+ 138          
+ 139          void main (void) 
+ 140          {
+ 141   1          SYS_Init();
+ 142   1      
+ 143   1          UART0_Init();
+ 144   1      
+ 145   1        GPIO_Init();          //P1.2 , GPIO
+ 146   1            
+ 147   1        BasicTimer_TIMER0_Init();
+ 148   1        
+ 149   1      
+ 150   1          while(1)
+ 151   1          {
+ 152   2      
+ 153   2          UART0_Process();
+ 154   2          }
+ 155   1      }
+ 156          
+ 157          
+ 158          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    320    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      7       2
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.55   MAIN                                                                  05/07/2019 19:56:57 PAGE 4   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
