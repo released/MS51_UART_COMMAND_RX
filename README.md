@@ -29,10 +29,22 @@ RX : if confirm checksum correct , will feedback UARTCMD_ACK (B0)
 
 
 ==========================================================
+作法 : 
 
-主要概念就是先定義 command protocol 為底下這樣的結構 , 
+1.	將UART_Command.c , UART_Command.h 放到project , 
 
-header + function code + length + data + checksum + tailer
+2.	將u8UartRxCnt , u8SetProcessPkt放到application , 並初始化 (UART initial 完即可做此兩個變數初始化)
+
+3.	將UartCmd_Send 內的UART_Send_Data (每次一個byte) 改為目前平台上uart tx with 1 byte
+
+4.	將UartCmd_Rx_Receive 放到application 的UART IRQ (接收RX)
+
+5.	將UART0_Process放到application 的main while loop (解碼RX command)
+
+
+主要概念 : 
+
+定義 command protocol 為底下這樣的結構 , header + function code + length + data + checksum + tailer
 
 header : comand 開頭 , 用來定義是否為起始點
 
@@ -46,9 +58,10 @@ data : 為一個陣列 , 目前範例是訂為4 個byte , 可寫入4 個byte , �
 
 checksum : function + data 總和 , 用0 去減
 
+細節 : 
 
 參考// TODO: Step1~6 , 可以加速porting 到project 
 
 關鍵字//customize , 可以自訂 , 改為自己的project application
 
-每個command 上面的command 有command example (目前是使用PC 端terminal 做TX 的腳色 , 用MCU 當RX 接收)
+每個command 上面的comment有TX command example (目前是使用PC 端terminal 做TX 的腳色 , 用MCU 當RX 接收)
