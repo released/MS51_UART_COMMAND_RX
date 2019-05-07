@@ -106,7 +106,7 @@ static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t data1,uint8_t data2,
 	34 B3 00 4E 41 43 4B 30 81
 */
  
-UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)
+UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint8_t temp = 0;	//example , put command data into a variable
 
@@ -128,7 +128,7 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)
 	after RX receive , if confirm checksum correct , will feedback UARTCMD_ACK (B0) with 1 byte data
 	34 B0 01 96 00 00 00 B9 81	
 */
-UARTCMD_RESULT_t CustomUartCmdHandler_Function02_Get(UARTCMD_BUF_t *cmd)
+UARTCMD_RESULT_t CustomUartCmdHandler_Function02_Get(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint8_t Data = 0x96;		//example , set 1 byte data out
 
@@ -147,7 +147,7 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function02_Get(UARTCMD_BUF_t *cmd)
 	after RX receive , if confirm checksum correct , will feedback UARTCMD_ACK (B0) with 2 byte data
 	34 B0 02 12 34 00 00 08 81 	
 */
-UARTCMD_RESULT_t CustomUartCmdHandler_Function03_Get(UARTCMD_BUF_t *cmd)
+UARTCMD_RESULT_t CustomUartCmdHandler_Function03_Get(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint16_t Data = 0x1234;	//example , set 2 byte bit data out
 
@@ -166,7 +166,7 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function03_Get(UARTCMD_BUF_t *cmd)
 	after RX receive , if confirm checksum correct , will feedback UARTCMD_ACK (B0) with 4 byte data
 	34 B0 04 55 66 32 31 2E 81 	
 */
-UARTCMD_RESULT_t CustomUartCmdHandler_Function04_Get(UARTCMD_BUF_t *cmd)
+UARTCMD_RESULT_t CustomUartCmdHandler_Function04_Get(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint16_t Data1 = 0x5566;	//example , set 4 byte bit data out
 	uint16_t Data2 = 0x3231;
@@ -186,7 +186,7 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function04_Get(UARTCMD_BUF_t *cmd)
 	after RX receive , if confirm checksum correct , will feedback UARTCMD_ACK (B0)
 	34 B0 00 00 00 00 00 50 81 	
 */
-UARTCMD_RESULT_t CustomUartCmdHandler_Function05_Set(UARTCMD_BUF_t *cmd)
+UARTCMD_RESULT_t CustomUartCmdHandler_Function05_Set(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint8_t temp = 0;	//example , put command data into a your application data address
 
@@ -209,7 +209,7 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function05_Set(UARTCMD_BUF_t *cmd)
 	34 B0 03 13 57 00 90 53 81 	
 */
 
-UARTCMD_RESULT_t CustomUartCmdHandler_Function06_Get(UARTCMD_BUF_t *cmd)
+UARTCMD_RESULT_t CustomUartCmdHandler_Function06_Get(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint16_t Data1 = 0x1357;	//example , set 3 byte bit data out
 	uint8_t Data2 = 0x90;
@@ -500,12 +500,5 @@ void UART0_Process(void)
 		memset( aui1_cmd_buf,0,sizeof( aui1_cmd_buf));			
 	}
 }
-
-
-
-
-
-
-
 
 
