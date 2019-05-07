@@ -78,8 +78,6 @@ UARTCMD_BUF_t			UartCommand;
 
 static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t data1,uint8_t data2,uint8_t data3,uint8_t data4);
 
-
-// TODO: Step #2 , modify function to expect behavior , set data by TX or get data and return to TX
 //	UART CMD format
 //	0   	1   	2    	3   	4   	5   	6   	7		8
 //	HEADER 	0x0A 	4  		D0  	D1  	D2  	D3		CHK 	TAILER
@@ -105,7 +103,8 @@ static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t data1,uint8_t data2,
 	 will feedback UARTCMD_NACK (B3)
 	34 B3 00 4E 41 43 4B 30 81
 */
- 
+
+// TODO: Step #2 , modify function to expect behavior , set data by TX or get data and return to TX 
 UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint8_t temp = 0;	//example , put command data into a variable
