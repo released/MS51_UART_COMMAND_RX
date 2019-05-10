@@ -11,6 +11,11 @@
 #define UARTCMD_NACK							(0xB3)
 #define UARTCMD_BAD_FORMAT					(0xB4)
 
+#define UARTCMD_IND_NOT_SUPPORT				"NSPT"
+#define UARTCMD_IND_ERROR_CHECKSUM			"ECKM"
+#define UARTCMD_IND_NACK						"NACK"
+#define UARTCMD_IND_BAD_FORMAT				"BFMT"
+
 //UART CMD variable
 uint8_t 	u8UartRxCnt = 0;
 uint8_t 	u8SetProcessPkt = 0;
@@ -56,8 +61,8 @@ typedef enum
 typedef struct {
 	uint8_t header;
 	uint8_t function;
-	uint8_t length;
-	uint8_t Data[UARTCMD_DATA_LEN];
+	uint8_t datalength;
+	uint8_t transferdata[UARTCMD_DATA_LEN];
 	uint8_t checksum;
 	uint8_t tailer;
 }UARTCMD_BUF_t;
@@ -65,7 +70,7 @@ typedef struct {
 typedef struct
 {
 	UARTCMD_FUNCTION_CODE cmd_code;
-	uint8_t length;
+	uint8_t data_length;
 	uint8_t data_template;
 	UARTCMD_RESULT_t (*handler) (UARTCMD_BUF_t *cmd);
 } UARTCMD_TEMPLATE_t;
@@ -74,9 +79,11 @@ typedef struct
 #define UARTCMD_LENGTH							(sizeof(UARTCMD_BUF_t))
 
 uint8_t 					aui1_cmd_buf[UARTCMD_LENGTH];
-UARTCMD_BUF_t			UartCommand;
+UARTCMD_BUF_t				UartCommand;
 
-static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t data1,uint8_t data2,uint8_t data3,uint8_t data4);
+static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t *transferdata);
+static void _UartCmdParser_ClearDataBuffer(void);
+
 
 //	UART CMD format
 //	0   	1   	2    	3   	4   	5   	6   	7		8
@@ -90,31 +97,34 @@ static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t data1,uint8_t data2,
 	after RX receive , if confirm checksum correct , will feedback UARTCMD_ACK (B0)
 	34 B0 00 00 00 00 00 50 81	
 
-	Example 2:	if use wrong checksum , 
+	Example 2:	
+	if use wrong checksum , 
 	\34\0a\04\11\22\33\44\49\81
 
 	 will feedback UARTCMD_ERROR_CHECKSUM (B2)
-	34 B2 00 45 53 55 4D 14 81
+	34 B2 04 45 43 4B 4D 2A 81
 
-
-	Example 3: 	if use wrong function code with correct checksum , 
+	Example 3: 	
+	if use wrong function code with correct checksum , 
 	\34\28\04\11\22\33\44\2A\81
 
 	 will feedback UARTCMD_NACK (B3)
-	34 B3 00 4E 41 43 4B 30 81
+	34 B3 04 4E 41 43 4B 2C 81
 */
 
 // TODO: Step #2 , modify function to expect behavior , set data by TX or get data and return to TX 
 UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint8_t temp = 0;	//example , put command data into a variable
+	uint16_t i = 0;
 
-	_UartCmdParser_CmdFormat(0x00,0x00,0x00,0x00,0x00);
+	//for this example , use temp to store data
+	for (i=0;i<UARTCMD_DATA_LEN;i++)
+	{
 
-	temp = cmd->Data[0];	//for this example , use temp to store data
-	temp = cmd->Data[1];
-	temp = cmd->Data[2];
-	temp = cmd->Data[3];
+
+		temp = cmd->transferdata[i];
+	}
 
 	(void) temp;
 	
@@ -131,9 +141,9 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)	//custo
 */
 UARTCMD_RESULT_t CustomUartCmdHandler_Function02_Get(UARTCMD_BUF_t *cmd)	//customize
 {
-	uint8_t Data = 0x96;		//example , set 1 byte data out
+	uint8_t OutData = 0x96;		//example , set 1 byte data out
 
-	_UartCmdParser_CmdFormat(UARTCMD_1_BYTE_DATA,Data,0x00,0x00,0x00);
+	_UartCmdParser_CmdFormat(UARTCMD_1_BYTE_DATA,&OutData);
 
 	(void) cmd;
 	
@@ -150,9 +160,12 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function02_Get(UARTCMD_BUF_t *cmd)	//custo
 */
 UARTCMD_RESULT_t CustomUartCmdHandler_Function03_Get(UARTCMD_BUF_t *cmd)	//customize
 {
-	uint16_t Data = 0x1234;	//example , set 2 byte bit data out
+	uint8_t Output[UARTCMD_2_BYTE_DATA] = {0};	//example , set 2 byte bit data out
 
-	_UartCmdParser_CmdFormat(UARTCMD_2_BYTE_DATA,HIBYTE(Data),LOBYTE(Data),0x00,0x00);
+	Output[0] = 0x12;
+	Output[1] = 0x34;
+
+	_UartCmdParser_CmdFormat(UARTCMD_2_BYTE_DATA,Output);
 
 	(void) cmd;
 	
@@ -169,10 +182,14 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function03_Get(UARTCMD_BUF_t *cmd)	//custo
 */
 UARTCMD_RESULT_t CustomUartCmdHandler_Function04_Get(UARTCMD_BUF_t *cmd)	//customize
 {
-	uint16_t Data1 = 0x5566;	//example , set 4 byte bit data out
-	uint16_t Data2 = 0x3231;
+	uint8_t Output[UARTCMD_4_BYTE_DATA] = {0};	//example , set 4 byte bit data out
+
+	Output[0] = 0x55;
+	Output[1] = 0x66;
+	Output[2] = 0x32;
+	Output[3] = 0x31;
 	
-	_UartCmdParser_CmdFormat(UARTCMD_4_BYTE_DATA,HIBYTE(Data1),LOBYTE(Data1),HIBYTE(Data2),LOBYTE(Data2));
+	_UartCmdParser_CmdFormat(UARTCMD_4_BYTE_DATA,Output);
 
 	(void) cmd;
 	
@@ -190,13 +207,15 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function04_Get(UARTCMD_BUF_t *cmd)	//custo
 UARTCMD_RESULT_t CustomUartCmdHandler_Function05_Set(UARTCMD_BUF_t *cmd)	//customize
 {
 	uint8_t temp = 0;	//example , put command data into a your application data address
+	uint16_t i = 0;
 
-	_UartCmdParser_CmdFormat(0x00,0x00,0x00,0x00,0x00);
+	//for this example , use temp to store data
+	for (i=0;i<UARTCMD_3_BYTE_DATA;i++)
+	{
 
-	temp = cmd->Data[0];	//for this example , use temp to store data
-	temp = cmd->Data[1];
-	temp = cmd->Data[2];
-	temp = cmd->Data[3];
+
+		temp = cmd->transferdata[i];
+	}
 
 	(void) temp;
 	
@@ -214,10 +233,13 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function05_Set(UARTCMD_BUF_t *cmd)	//custo
 
 UARTCMD_RESULT_t CustomUartCmdHandler_Function06_Get(UARTCMD_BUF_t *cmd)	//customize
 {
-	uint16_t Data1 = 0x1357;	//example , set 3 byte bit data out
-	uint8_t Data2 = 0x90;
+	uint8_t Output[UARTCMD_3_BYTE_DATA] = {0};	//example , set 3 byte bit data out
+
+	Output[0]=0x13;
+	Output[1]=0x57;
+	Output[2]=0x90;
 	
-	_UartCmdParser_CmdFormat(UARTCMD_3_BYTE_DATA,HIBYTE(Data1),LOBYTE(Data1),HIBYTE(Data2),LOBYTE(Data2));
+	_UartCmdParser_CmdFormat(UARTCMD_3_BYTE_DATA,Output);
 
 	(void) cmd;
 	
@@ -258,19 +280,33 @@ static uint8_t _UartCmdParser_GetChecksum(UARTCMD_BUF_t *cmd )
     return (uint8_t) (0-u8Checksum);
 }
 
-static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t data1,uint8_t data2,uint8_t data3,uint8_t data4)
+static void _UartCmdParser_ClearDataBuffer(void)
+{
+	uint16_t len = 0;
+	uint8_t ClearBuffer[UARTCMD_DATA_LEN] = {0};
+
+	UartCommand.datalength = 0;	//UARTCMD_DATA_LEN;	
+	for (len=0;len<UARTCMD_DATA_LEN;len++)
+	{
+		UartCommand.transferdata[len] = *(ClearBuffer+len);
+	}	
+}
+
+static void _UartCmdParser_CmdFormat(uint8_t length,uint8_t *transferdata)
 {
 	//Need to manual decide the cmd output data
-	UartCommand.length  = length;
-	UartCommand.Data[0] = data1;
-	UartCommand.Data[1] = data2;
-	UartCommand.Data[2] = data3;
-	UartCommand.Data[3] = data4;
-	
+	uint16_t len = 0 ;
+
+	UartCommand.datalength = length;	
+	for (len=0;len<length;len++)
+	{
+		UartCommand.transferdata[len] = *(transferdata+len);
+	}	
 }
 
 static void _UartCmdParser_SendFeedback(UARTCMD_RESULT_t result,UARTCMD_BUF_t *cmd)
 {
+	uint8_t i = 0;
 	UARTCMD_BUF_t rcmd;
 	(void) cmd;
 	
@@ -282,22 +318,22 @@ static void _UartCmdParser_SendFeedback(UARTCMD_RESULT_t result,UARTCMD_BUF_t *c
 			break;
 
 		case RESULT_ACK_NOT_SUPPORTED:
-			_UartCmdParser_CmdFormat(0x00,0x4E,0x53,0x55,0x50);//use NSUP to verify whats happen			
+			_UartCmdParser_CmdFormat(strlen(UARTCMD_IND_NOT_SUPPORT),UARTCMD_IND_NOT_SUPPORT);//use NSUP to verify whats happen			
 			rcmd.function = UARTCMD_NOT_SUPPORT;						
 			break;
 			
 		case RESULT_ACK_ERROR_CHECKSUM:
-			_UartCmdParser_CmdFormat(0x00,0x45,0x53,0x55,0x4D);//use ESUM to verify whats happen		
+			_UartCmdParser_CmdFormat(strlen(UARTCMD_IND_ERROR_CHECKSUM),UARTCMD_IND_ERROR_CHECKSUM);//use ESUM to verify whats happen		
 			rcmd.function = UARTCMD_ERROR_CHECKSUM;
 			break;
 
 		case RESULT_ACK_BAD_FORMAT:
-			_UartCmdParser_CmdFormat(0x00,0x42,0x41,0x44,0x46);//use BADF to verify whats happen		
+			_UartCmdParser_CmdFormat(strlen(UARTCMD_IND_BAD_FORMAT),UARTCMD_IND_BAD_FORMAT);//use BADF to verify whats happen		
 			rcmd.function = UARTCMD_BAD_FORMAT;
 			break;
 			
 		default:
-			_UartCmdParser_CmdFormat(0x00,0x4E,0x41,0x43,0x4B);//use NACK to verify whats happen
+			_UartCmdParser_CmdFormat(strlen(UARTCMD_IND_NACK),UARTCMD_IND_NACK);//use NACK to verify whats happen
 			rcmd.function = UARTCMD_NACK;
 			break;
 	}
@@ -305,11 +341,11 @@ static void _UartCmdParser_SendFeedback(UARTCMD_RESULT_t result,UARTCMD_BUF_t *c
 	rcmd.header = UARTCMD_HEADER;
 
 	//manual clear data
-	rcmd.length = UartCommand.length; 
-	rcmd.Data[0]= UartCommand.Data[0]; 
-	rcmd.Data[1]= UartCommand.Data[1];
-	rcmd.Data[2]= UartCommand.Data[2];
-	rcmd.Data[3]= UartCommand.Data[3];
+	rcmd.datalength = UartCommand.datalength; 
+	for (i=0;i<UARTCMD_DATA_LEN;i++)
+	{
+		rcmd.transferdata[i]= UartCommand.transferdata[i]; 
+	}
 	
 	rcmd.checksum = _UartCmdParser_GetChecksum(&rcmd);
 	rcmd.tailer = UARTCMD_TAILER;
@@ -323,6 +359,8 @@ static void _UartCmdParser_SendFeedback(UARTCMD_RESULT_t result,UARTCMD_BUF_t *c
 static void _UartCmdParser_Set_cmd(UARTCMD_BUF_t *cmd)
 {
 	UARTCMD_RESULT_t result = RESULT_ACK_OK ;
+
+	_UartCmdParser_ClearDataBuffer();
 
 	switch(cmd->function)
 	{
@@ -360,16 +398,16 @@ static int _UartCmdParser_FindHandlerIndex(UARTCMD_BUF_t *cmd)
           (cmd->tailer == UARTCMD_TAILER))
 		{
 			#if 0	//debug
-			//UART_Send_Data(UART0 ,_UartCmdParser_Array[i].length);
+			//UART_Send_Data(UART0 ,_UartCmdParser_Array[i].datalength);
 			//UART_Send_Data(UART0 ,cmd->length);			
 			//UART_Send_Data(UART0 , _UartCmdParser_Array[i].data1);	
 			//UART_Send_Data(UART0 , cmd->data[0]);	
 			#endif
 			
-			if ( (_UartCmdParser_Array[i].length == UARTCMD_WILDCARD && _UartCmdParser_Array[i].data_template == UARTCMD_WILDCARD) ||
-				(_UartCmdParser_Array[i].length == cmd->length && _UartCmdParser_Array[i].data_template == UARTCMD_WILDCARD) ||
-				(_UartCmdParser_Array[i].length == UARTCMD_WILDCARD && _UartCmdParser_Array[i].data_template == cmd->Data[0]) ||
-				(_UartCmdParser_Array[i].length == cmd->length && _UartCmdParser_Array[i].data_template == cmd->Data[0]) )
+			if ( (_UartCmdParser_Array[i].data_length == UARTCMD_WILDCARD && _UartCmdParser_Array[i].data_template == UARTCMD_WILDCARD) ||
+				(_UartCmdParser_Array[i].data_length == cmd->datalength && _UartCmdParser_Array[i].data_template == UARTCMD_WILDCARD) ||
+				(_UartCmdParser_Array[i].data_length == UARTCMD_WILDCARD && _UartCmdParser_Array[i].data_template == cmd->transferdata[0]) ||
+				(_UartCmdParser_Array[i].data_length == cmd->datalength && _UartCmdParser_Array[i].data_template == cmd->transferdata[0]) )
 			{
 				return i;
 			}
