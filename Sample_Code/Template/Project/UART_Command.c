@@ -115,6 +115,8 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function01_Set(UARTCMD_BUF_t *cmd)	//custo
 	temp = cmd->Data[1];
 	temp = cmd->Data[2];
 	temp = cmd->Data[3];
+
+	(void) temp;
 	
 	return RESULT_ACK_OK;
 }
@@ -195,6 +197,8 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function05_Set(UARTCMD_BUF_t *cmd)	//custo
 	temp = cmd->Data[1];
 	temp = cmd->Data[2];
 	temp = cmd->Data[3];
+
+	(void) temp;
 	
 	return RESULT_ACK_OK;
 } 
@@ -223,15 +227,15 @@ UARTCMD_RESULT_t CustomUartCmdHandler_Function06_Get(UARTCMD_BUF_t *cmd)	//custo
 // TODO: Step #3 , register function code and function to array
 UARTCMD_TEMPLATE_t _UartCmdParser_Array[] = 
 {
-	{UARTCMD_FUNCTION01_SET	,UARTCMD_4_BYTE_DATA, UARTCMD_WILDCARD, CustomUartCmdHandler_Function01_Set},
-	{UARTCMD_FUNCTION02_GET	,UARTCMD_1_BYTE_DATA, UARTCMD_WILDCARD, CustomUartCmdHandler_Function02_Get},
-	{UARTCMD_FUNCTION03_GET	,UARTCMD_2_BYTE_DATA, UARTCMD_WILDCARD, CustomUartCmdHandler_Function03_Get},
-	{UARTCMD_FUNCTION04_GET	,UARTCMD_4_BYTE_DATA, UARTCMD_WILDCARD, CustomUartCmdHandler_Function04_Get},
+	{UARTCMD_FUNCTION01_SET	,UARTCMD_4_BYTE_DATA	, UARTCMD_WILDCARD, CustomUartCmdHandler_Function01_Set},
+	{UARTCMD_FUNCTION02_GET	,UARTCMD_1_BYTE_DATA	, UARTCMD_WILDCARD, CustomUartCmdHandler_Function02_Get},
+	{UARTCMD_FUNCTION03_GET	,UARTCMD_2_BYTE_DATA	, UARTCMD_WILDCARD, CustomUartCmdHandler_Function03_Get},
+	{UARTCMD_FUNCTION04_GET	,UARTCMD_4_BYTE_DATA	, UARTCMD_WILDCARD, CustomUartCmdHandler_Function04_Get},
 
-	{UARTCMD_FUNCTION05_SET	,UARTCMD_3_BYTE_DATA, UARTCMD_WILDCARD, CustomUartCmdHandler_Function05_Set},
-	{UARTCMD_FUNCTION06_GET	,UARTCMD_3_BYTE_DATA, UARTCMD_WILDCARD, CustomUartCmdHandler_Function06_Get},
+	{UARTCMD_FUNCTION05_SET	,UARTCMD_3_BYTE_DATA	, UARTCMD_WILDCARD, CustomUartCmdHandler_Function05_Set},
+	{UARTCMD_FUNCTION06_GET	,UARTCMD_3_BYTE_DATA	, UARTCMD_WILDCARD, CustomUartCmdHandler_Function06_Get},
 	
-	{0xFF, 0x00, 0x00, NULL},  // this is the end of list marker
+	{UARTCMD_FUNCTION_MAX	,0x00					, UARTCMD_WILDCARD, NULL},  // this is the end of list marker
 };
 
 /*
